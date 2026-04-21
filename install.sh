@@ -26,17 +26,35 @@ echo "Samba NAS installation complete!"
 
 echo "Configuring Samba share..."
 
-sudo bash -c 'cat >> /etc/samba/smb.conf <<EOF
+sudo bash -c "cat >> /etc/samba/smb.conf <<EOF
 
 [nas]
 path = /srv/nas
 browseable = yes
 read only = no
 guest ok = no
+valid users = $NAS_USER
 create mask = 0775
 directory mask = 0775
-EOF'
+EOF"
 
 echo "Restarting Samba..."
 
 sudo systemctl restart smbd
+
+# ==============================================================
+# Samba User Setup
+# ==============================================================
+
+echo "Creating Samba user..."
+
+read -p "Enter username for Samba access: " NAS_USER
+
+sudo useradd -m "$NAS_USER" || true
+
+echo "Set Samba password for $NAS_USER"
+
+sudo smbpasswd -a "$NAS_USER"
+
+echo "Samba user $NAS_USER created and configured."
+
