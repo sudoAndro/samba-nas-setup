@@ -1,50 +1,205 @@
-# Setup Guide
+# 📦 Samba NAS Setup Guide
 
-## 1. Install dependencies
+This guide explains how to use the **Samba NAS Setup Tool** step by step.
+
+---
+
+## 1️⃣ Requirements
+
+Make sure your system meets the following:
+
+* Debian / Ubuntu / Raspberry Pi OS
+* sudo privileges
+* Internet connection
+
+---
+
+## 2️⃣ Install dependencies
 
 ```bash
 sudo apt update
 sudo apt install whiptail samba -y
+```
 
-## 2. Start the menu
+---
+
+## 3️⃣ Start the tool
+
+```bash
 bash menu.sh
+```
 
-## 3. Create your share
+---
 
-Use menu option:
+## 4️⃣ Create your NAS share
 
-Install Samba NAS
+In the menu, choose:
 
-Then enter:
+```text
+1) Install Samba NAS
+```
 
-Samba username
-share name
-share path
-guest access
-Samba password
+You will be asked for:
 
-## 4. Connect from Windows
+* **Samba username** → login user
+* **Share name** → folder name (e.g. `nas`, `media`, `files`)
+* **Share path** → folder location (default: `/srv/nas`)
+* **Guest access** → yes/no
+* **Password** → Samba password
+
+---
+
+## 5️⃣ What happens automatically
+
+The tool will:
+
+* install Samba (if not already installed)
+* create a Linux user
+* create a Samba user
+* create the share directory
+* set correct permissions
+* update `/etc/samba/smb.conf`
+* restart the Samba service
+
+---
+
+## 6️⃣ Connect from Windows
+
+Open Explorer and enter:
+
+```text
 \\SERVER-IP\SHARENAME
+```
 
-## 5. Connect from phone
+Example:
+
+```text
+\\192.168.50.233\share
+```
+
+---
+
+## 7️⃣ Connect from Phone
+
+Use any file manager (e.g. Solid Explorer, CX File Explorer):
+
+```text
 smb://SERVER-IP/SHARENAME
+```
 
-## 6. Check configuration
+Example:
 
-Use menu options:
+```text
+smb://192.168.50.233/share
+```
 
-Show Samba Status
-Check Samba Config
-Windows / Phone connection data
+---
 
-## Datei `examples/smb-share-example.conf`
+## 8️⃣ Login
 
-```ini
-[share]
-path = /srv/nas
-browseable = yes
-read only = no
-guest ok = no
-valid users = myuser
-create mask = 0775
-directory mask = 0775
+Use the credentials you created:
+
+* Username: your Samba username
+* Password: your Samba password
+
+⚠️ Important:
+
+* Share name is NOT the same as username
+* Wrong login = no access
+
+---
+
+## 9️⃣ Troubleshooting
+
+### Check Samba status
+
+Menu:
+
+```text
+3) Show Samba Status
+```
+
+---
+
+### Check configuration
+
+Menu:
+
+```text
+4) Check Samba Config
+```
+
+---
+
+### View current shares
+
+Menu:
+
+```text
+5) Show Current Share Config
+```
+
+---
+
+### Connection info
+
+Menu:
+
+```text
+6) Windows / Phone connection data
+```
+
+---
+
+## 🔟 Common issues
+
+### Cannot connect from Windows
+
+* Check firewall:
+
+```bash
+sudo ufw allow samba
+```
+
+* Check IP:
+
+```bash
+hostname -I
+```
+
+---
+
+### Share not visible
+
+Restart Samba:
+
+```bash
+sudo systemctl restart smbd
+```
+
+---
+
+### Wrong permissions
+
+Fix manually:
+
+```bash
+sudo chown -R USER:USER /srv/nas
+sudo chmod -R 775 /srv/nas
+```
+
+---
+
+## 📁 Config file
+
+The tool stores last setup in:
+
+```text
+/etc/samba-nas-setup.conf
+```
+
+---
+
+## ✅ Done
+
+Your NAS is now ready to use.

@@ -1,80 +1,219 @@
-# Samba NAS Setup
+# 🖥️ Samba NAS Setup Tool
 
-Simple automated Samba NAS installer for Debian and Raspberry Pi.
+Interactive Samba NAS setup tool for Debian and Raspberry Pi OS.
+Create and manage a network share in minutes — no manual config needed.
 
-```md
-## Features
+---
 
-- interactive setup menu
-- Samba installation
-- Linux + Samba user creation
-- automatic share creation
-- firewall rule for Samba
-- config validation
-- service restart and status check
+## 🚀 Features
 
-## Preview
+* Interactive **whiptail menu** (raspi-config style)
+* Automatic **Samba installation**
+* Creates **Linux + Samba user**
+* Creates and configures **NAS share**
+* Automatically edits **smb.conf**
+* Optional **guest access**
+* Opens firewall (UFW) if enabled
+* Shows **ready-to-use connection data**
+* Status, config check & troubleshooting tools
+* Modular structure (clean & extendable)
 
-![Samba NAS Setup Menu](images/common.png/menu.png)
+---
 
-## Installation
+## 📸 Preview
+
+![Menu Preview](images/menu.png)
+
+---
+
+## 📦 Requirements
+
+* Debian / Ubuntu / Raspberry Pi OS
+* sudo privileges
+* Internet connection
+
+Install dependencies:
+
+```bash
+sudo apt update
+sudo apt install whiptail samba -y
+```
+
+---
+
+## ⚙️ Installation
 
 Clone the repository:
 
 ```bash
 git clone git@github.com:sudoAndro/samba-nas-setup.git
 cd samba-nas-setup
+```
 
-## Run the tool:
+Start the tool:
 
+```bash
 bash menu.sh
+```
 
-## Share location
+---
 
-After installation the Samba share will be available at:
+## 🧰 Usage
 
-/srv/nas
+After starting, you will see a menu like:
 
-You can access it from Windows via:
+```text
+1) Install Samba NAS
+2) Restart Samba
+3) Show Samba Status
+4) Check Samba Config
+5) Show Current Share Config
+6) Windows / Phone connection data
+7) About / Help
+8) Exit
+```
 
-\\SERVER-IP\nas
+---
 
-## Authentication
+## 🔌 Connection Examples
 
-During installation you will be prompted to create a Samba user.
+### 🪟 Windows
 
-Use this user to access the NAS share.
-
-## Access
-
-After installation you can access the NAS from Windows or Phone:
-
-## Windows:
+```text
 \\SERVER-IP\SHARENAME
+```
 
-## Phone:
+Example:
+
+```text
+\\192.168.50.233\share
+```
+
+---
+
+### 📱 Phone / File Manager
+
+```text
 smb://SERVER-IP/SHARENAME
+```
 
+Example:
 
+```text
+smb://192.168.50.233/share
+```
 
-## Project structure
+---
 
+## 🔐 Login Information
+
+After installation, the tool shows:
+
+* Server IP
+* Share name
+* Username
+* Password (hidden)
+
+⚠️ Important:
+
+* **Username ≠ Share name**
+* Use the correct credentials when connecting
+
+---
+
+## 📁 Project Structure
+
+```text
 samba-nas-setup
-├─ menu.sh
-├─ common.sh
-├─ functions.sh
-├─ install.sh
-├─ uninstall.sh
+├─ menu.sh            # main menu
+├─ common.sh          # shared functions (banner, helpers)
+├─ functions.sh       # core logic
+├─ install.sh         # optional installer
+├─ uninstall.sh       # remove share config
 ├─ README.md
 ├─ docs
 │  └─ setup.md
-└─ examples
-   └─ smb-share-example.conf
+├─ examples
+│  └─ smb-share-example.conf
+└─ images
+   └─ menu.png
+```
 
+---
 
-## Notes
+## 🧠 How it works
 
-- Share name is not the same as username
-- The tool stores last setup data in:
+The tool:
 
+1. Installs Samba (if not installed)
+2. Creates a Linux user
+3. Creates a Samba user
+4. Creates a share directory
+5. Configures `/etc/samba/smb.conf`
+6. Restarts Samba service
+7. Stores last setup in:
+
+```text
 /etc/samba-nas-setup.conf
+```
+
+---
+
+## 🧹 Uninstall
+
+Run:
+
+```bash
+bash uninstall.sh
+```
+
+This removes:
+
+* Samba share config from `smb.conf`
+
+⚠️ It does NOT delete:
+
+* user accounts
+* share directories
+
+(This is intentional to avoid data loss)
+
+---
+
+## ⚠️ Notes
+
+* Do not run multiple setups with the same share name
+* Always check config after changes
+* Use menu option **4 (Check Samba Config)** if something fails
+
+---
+
+## 📖 Documentation
+
+See:
+
+```text
+docs/setup.md
+```
+
+---
+
+## 🧪 Example Config
+
+See:
+
+```text
+examples/smb-share-example.conf
+```
+
+---
+
+## 👤 Author
+
+**sudoAndro**
+
+---
+
+## 📜 License
+
+MIT License
