@@ -28,3 +28,9 @@ You can access it from Windows via:
 During installation you will be prompted to create a Samba user.
 
 Use this user to access the NAS share.
+
+## Access
+
+After installation you can access the NAS from Windows:
+
+\\SERVER-IP\nas

@@ -97,3 +97,15 @@ echo ""
 echo "✅ Samba NAS setup complete!"
 echo "📁 Share: /srv/nas"
 echo "👤 User: $NAS_USER"
+
+# ==============================================================
+# Access your NAS from Windows
+# ==============================================================
+
+echo ""
+echo "🌐 Access your NAS from Windows:"
+
+IP=$(hostname -I | awk '{print $1}')
+
+echo "➡ \\$IP\nas"
+
