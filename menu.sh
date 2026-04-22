@@ -31,8 +31,6 @@ show_banner() {
   /-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/ /
 /-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/ /
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
 EOF
     echo -e "\033[0m"
 }
@@ -43,66 +41,60 @@ pause_screen() {
 }
 
 install_samba() {
-    echo "=== Install Samba NAS ==="
-    echo
+    if ! whiptail --yesno "Start Samba installation?" 10 50; then
+        return
+    fi
 
-    while true; do
-        read -p "Enter Samba username: " NAS_USER
-        if [ -n "$NAS_USER" ]; then
-            break
-        else
-            echo "Username cannot be empty."
-        fi
-    done
+    NAS_USER=$(whiptail --inputbox "Enter Samba username" 10 50 3>&1 1>&2 2>&3)
+    [ -z "$NAS_USER" ] && return
 
-    read -p "Enter share name [nas]: " SHARE_NAME
-    SHARE_NAME=${SHARE_NAME:-nas}
+    SHARE_NAME=$(whiptail --inputbox "Enter share name" 10 50 "nas" 3>&1 1>&2 2>&3)
+    [ -z "$SHARE_NAME" ] && return
 
-    read -p "Enter share path [/srv/nas]: " SHARE_PATH
-    SHARE_PATH=${SHARE_PATH:-/srv/nas}
+    SHARE_PATH=$(whiptail --inputbox "Enter share path" 10 60 "/srv/nas" 3>&1 1>&2 2>&3)
+    [ -z "$SHARE_PATH" ] && return
 
-    while true; do
-        read -p "Allow guest access? (yes/no) [no]: " GUEST_ACCESS
-        GUEST_ACCESS=${GUEST_ACCESS:-no}
-        case "$GUEST_ACCESS" in
-            yes|no) break ;;
-            *) echo "Please enter yes or no." ;;
-        esac
-    done
+    GUEST_ACCESS=$(whiptail --menu "Allow guest access?" 12 50 2 \
+        "yes" "Guest access enabled" \
+        "no" "Login required" 3>&1 1>&2 2>&3)
+    [ -z "$GUEST_ACCESS" ] && return
+
+    PASS=$(whiptail --passwordbox "Enter Samba password" 10 50 3>&1 1>&2 2>&3)
+    [ -z "$PASS" ] && return
+
+    PASS2=$(whiptail --passwordbox "Confirm Samba password" 10 50 3>&1 1>&2 2>&3)
+    [ -z "$PASS2" ] && return
+
+    if [ "$PASS" != "$PASS2" ]; then
+        whiptail --msgbox "Passwords do not match." 10 50
+        return
+    fi
 
     if dpkg -l | grep -q '^ii  samba '; then
-        echo "Samba is already installed. Skipping..."
+        whiptail --msgbox "Samba is already installed. Skipping package installation." 10 60
     else
-        echo "Installing Samba..."
         sudo apt update
         sudo apt install -y samba
     fi
 
     if id "$NAS_USER" >/dev/null 2>&1; then
-        echo "Linux user $NAS_USER already exists."
+        whiptail --msgbox "Linux user $NAS_USER already exists." 10 50
     else
-        echo "Creating Linux user $NAS_USER..."
         sudo useradd -m "$NAS_USER"
     fi
 
-    echo "Set Samba password for $NAS_USER"
-    sudo smbpasswd -a "$NAS_USER"
+    echo -e "$PASS\n$PASS" | sudo smbpasswd -s -a "$NAS_USER" > /dev/null
 
     if [ ! -d "$SHARE_PATH" ]; then
-        echo "Creating share directory..."
         sudo mkdir -p "$SHARE_PATH"
-    else
-        echo "Directory $SHARE_PATH already exists."
     fi
 
     sudo chown -R "$NAS_USER:$NAS_USER" "$SHARE_PATH"
     sudo chmod -R 775 "$SHARE_PATH"
 
     if grep -q "^\[$SHARE_NAME\]$" /etc/samba/smb.conf; then
-        echo "Share [$SHARE_NAME] already exists in smb.conf. Skipping..."
+        whiptail --msgbox "Share [$SHARE_NAME] already exists in smb.conf. Skipping..." 10 60
     else
-        echo "Adding Samba share [$SHARE_NAME]..."
-
         if [ "$GUEST_ACCESS" = "yes" ]; then
             sudo bash -c "cat >> /etc/samba/smb.conf <<EOF
 
@@ -130,94 +122,80 @@ EOF"
     fi
 
     if command -v ufw >/dev/null 2>&1; then
-        echo "Allowing Samba through firewall..."
         sudo ufw allow samba
     fi
 
-    echo "Checking Samba configuration..."
     testparm -s >/dev/null
-
-    echo "Restarting Samba..."
     sudo systemctl restart smbd
 
     IP=$(hostname -I | awk '{print $1}')
 
-    echo
-    echo "✅ Samba NAS setup complete!"
-    echo "👤 User: $NAS_USER"
-    echo "📁 Share name: $SHARE_NAME"
-    echo "📂 Share path: $SHARE_PATH"
-    echo "🌐 Access from Windows: \\\\$IP\\$SHARE_NAME"
+    whiptail --msgbox "Samba NAS setup complete!
 
-    pause_screen
+User: $NAS_USER
+Share name: $SHARE_NAME
+Share path: $SHARE_PATH
+Access from Windows: \\\\$IP\\$SHARE_NAME" 15 70
 }
 
 restart_samba() {
-    echo "Restarting Samba..."
     sudo systemctl restart smbd
-    echo "Samba restarted."
-    pause_screen
+    whiptail --msgbox "Samba restarted." 10 40
 }
 
 show_status() {
-    echo "=== Samba Status ==="
-    sudo systemctl status smbd --no-pager
-    pause_screen
+    STATUS=$(systemctl status smbd --no-pager 2>&1)
+    whiptail --scrolltext --msgbox "$STATUS" 25 90
 }
 
 check_config() {
-    echo "=== Samba Config Check ==="
-    testparm
-    pause_screen
+    CONFIG_CHECK=$(testparm 2>&1)
+    whiptail --scrolltext --msgbox "$CONFIG_CHECK" 25 90
 }
 
 show_share_config() {
-    echo "=== Current Samba Share Config ==="
-    grep -A 10 "^\[.*\]" /etc/samba/smb.conf || true
-    pause_screen
+    SHARE_CONFIG=$(grep -A 10 "^\[.*\]" /etc/samba/smb.conf || true)
+    whiptail --scrolltext --msgbox "$SHARE_CONFIG" 25 90
 }
 
 show_connection_info() {
-    echo "=== Windows Connection Data ==="
-    echo
-
     IP=$(hostname -I | awk '{print $1}')
+    SHARES=$(grep "^\[" /etc/samba/smb.conf | sed 's/\[//;s/\]//')
 
-    echo "Server IP: $IP"
-    echo "Access from Windows:"
-    echo "\\\\$IP"
-    echo
+    whiptail --msgbox "Windows Connection Data
 
-    echo "Available shares:"
-    grep "^\[" /etc/samba/smb.conf | sed 's/\[//;s/\]//'
+Server IP: $IP
 
-    echo
-    echo "Example:"
-    echo "\\\\$IP\\nas"
-    
-    pause_screen
+Access from Windows:
+\\\\$IP
+
+Available shares:
+$SHARES
+
+Example:
+\\\\$IP\\nas" 18 70
 }
 
+show_banner
+
 while true; do
-    show_banner
-    echo "1) Install Samba NAS"
-    echo "2) Restart Samba"
-    echo "3) Show Samba Status"
-    echo "4) Check Samba Config"
-    echo "5) Show Current Share Config"
-    echo "6) Windows connection data"
-    echo "7) Exit"
-    read -p "Choose an option: " choice
+    OPTION=$(whiptail --title "Samba NAS Setup Tool" --menu "Choose an option" 20 60 10 \
+    "1" "Install Samba NAS" \
+    "2" "Restart Samba" \
+    "3" "Show Samba Status" \
+    "4" "Check Samba Config" \
+    "5" "Show Current Share Config" \
+    "6" "Windows connection data" \
+    "7" "Exit" 3>&1 1>&2 2>&3)
 
-case "$choice" in
-    1) install_samba ;;
-    2) restart_samba ;;
-    3) show_status ;;
-    4) check_config ;;
-    5) show_share_config ;;
-    6) show_connection_info ;;
-    7) echo "Goodbye!"; exit 0 ;;
-    *) echo "Invalid option."; sleep 1 ;;
-esac
-
+    case "$OPTION" in
+        1) install_samba ;;
+        2) restart_samba ;;
+        3) show_status ;;
+        4) check_config ;;
+        5) show_share_config ;;
+        6) show_connection_info ;;
+        7) clear; exit 0 ;;
+        *) clear; exit 0 ;;
+    esac
 done
