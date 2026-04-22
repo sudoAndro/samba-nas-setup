@@ -25,7 +25,16 @@ fi
 # ==============================================================
 
 echo "Creating Samba user..."
-read -p "Enter username for Samba access: " NAS_USER
+
+while true; do
+    read -p "Enter username for Samba access: " NAS_USER
+
+    if [ -n "$NAS_USER" ]; then
+        break
+    else
+        echo "❌ Username cannot be empty!"
+    fi
+done
 
 if id "$NAS_USER" >/dev/null 2>&1; then
     echo "Linux user $NAS_USER already exists"
