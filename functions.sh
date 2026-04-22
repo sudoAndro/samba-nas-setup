@@ -88,14 +88,33 @@ EOF"
     testparm -s >/dev/null
     sudo systemctl restart smbd
 
+    sudo bash -c "cat > /etc/samba-nas-setup.conf <<EOF
+NAS_USER=\"$NAS_USER\"
+SHARE_NAME=\"$SHARE_NAME\"
+SHARE_PATH=\"$SHARE_PATH\"
+EOF"
+
     IP=$(hostname -I | awk '{print $1}')
 
     whiptail --msgbox "Samba NAS setup complete!
 
-User: $NAS_USER
-Share name: $SHARE_NAME
-Share path: $SHARE_PATH
-Access from Windows: \\\\$IP\\$SHARE_NAME" 15 70
+Server IP:
+$IP
+
+Windows:
+\\\\$IP\\$SHARE_NAME
+
+Phone:
+smb://$IP/$SHARE_NAME
+
+Share name:
+$SHARE_NAME
+
+Username:
+$NAS_USER
+
+Password:
+******" 20 70
 }
 
 restart_samba() {
@@ -127,29 +146,35 @@ show_share_config() {
 
 show_connection_info() {
     IP=$(hostname -I | awk '{print $1}')
-    SHARES=$(grep "^\[" /etc/samba/smb.conf | sed 's/\[//;s/\]//')
 
-    if [ -z "$SHARES" ]; then
-        SHARES="No shares found"
-        PATH_INFO="No share path available"
-    else
-        FIRST_SHARE=$(echo "$SHARES" | head -n 1)
-        PATH_INFO="\\\\$IP\\$FIRST_SHARE"
+    if [ -f /etc/samba-nas-setup.conf ]; then
+        source /etc/samba-nas-setup.conf
+    fi
+
+    if [ -z "$SHARE_NAME" ] || [ -z "$NAS_USER" ]; then
+        whiptail --msgbox "No saved connection data found yet.
+
+Please run the Samba installation first." 12 60
+        return
     fi
 
     whiptail --title "Windows Connection Data" --msgbox "Windows Connection Data
 
-
 Server IP:
 $IP
 
-Available shares:
-$SHARES
+Windows:
+\\\\$IP\\$SHARE_NAME
 
-Windows path:
-$PATH_INFO
+Phone:
+smb://$IP/$SHARE_NAME
 
-Example login:
-Username = your Samba username
-Password = your Samba password" 20 70
+Share name:
+$SHARE_NAME
+
+Username:
+$NAS_USER
+
+Password:
+******" 20 70
 }
