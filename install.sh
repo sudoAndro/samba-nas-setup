@@ -7,6 +7,35 @@
 set -e
 
 echo "=== Samba NAS Installer ==="
+echo ""
+
+# ==============================================================
+# User Input
+# ==============================================================
+
+while true; do
+    read -p "Enter Samba username: " NAS_USER
+    if [ -n "$NAS_USER" ]; then
+        break
+    else
+        echo "Username cannot be empty."
+    fi
+done
+
+read -p "Enter share name [nas]: " SHARE_NAME
+SHARE_NAME=${SHARE_NAME:-nas}
+
+read -p "Enter share path [/srv/nas]: " SHARE_PATH
+SHARE_PATH=${SHARE_PATH:-/srv/nas}
+
+while true; do
+    read -p "Allow guest access? (yes/no) [no]: " GUEST_ACCESS
+    GUEST_ACCESS=${GUEST_ACCESS:-no}
+    case "$GUEST_ACCESS" in
+        yes|no) break ;;
+        *) echo "Please enter yes or no." ;;
+    esac
+done
 
 # ==============================================================
 # Samba Installation
@@ -21,24 +50,13 @@ else
 fi
 
 # ==============================================================
-# Samba User Setup
+# Linux User
 # ==============================================================
 
-echo "Creating Samba user..."
-
-while true; do
-    read -p "Enter username for Samba access: " NAS_USER
-
-    if [ -n "$NAS_USER" ]; then
-        break
-    else
-        echo "❌ Username cannot be empty!"
-    fi
-done
-
 if id "$NAS_USER" >/dev/null 2>&1; then
-    echo "Linux user $NAS_USER already exists"
+    echo "Linux user $NAS_USER already exists."
 else
+    echo "Creating Linux user $NAS_USER..."
     sudo useradd -m "$NAS_USER"
 fi
 
@@ -46,40 +64,39 @@ echo "Set Samba password for $NAS_USER"
 sudo smbpasswd -a "$NAS_USER"
 
 # ==============================================================
-# NAS Directory
+# Share Directory
 # ==============================================================
 
-if [ ! -d /srv/nas ]; then
-    echo "Creating NAS directory..."
-    sudo mkdir -p /srv/nas
-    sudo chmod 775 /srv/nas
-    sudo chown "$NAS_USER:$NAS_USER" /srv/nas
+if [ ! -d "$SHARE_PATH" ]; then
+    echo "Creating share directory..."
+    sudo mkdir -p "$SHARE_PATH"
 else
-    echo "Directory /srv/nas already exists"
-    sudo chown "$NAS_USER:$NAS_USER" /srv/nas
-    sudo chmod 775 /srv/nas
+    echo "Directory $SHARE_PATH already exists."
 fi
+
+sudo chown -R "$NAS_USER:$NAS_USER" "$SHARE_PATH"
+sudo chmod -R 775 "$SHARE_PATH"
 
 # ==============================================================
 # Samba Share Configuration
 # ==============================================================
 
-if ! grep -q "^\[nas\]$" /etc/samba/smb.conf; then
-    echo "Adding Samba share..."
+if grep -q "^\[$SHARE_NAME\]$" /etc/samba/smb.conf; then
+    echo "Share [$SHARE_NAME] already exists in smb.conf. Skipping..."
+else
+    echo "Adding Samba share [$SHARE_NAME]..."
 
     sudo bash -c "cat >> /etc/samba/smb.conf <<EOF
 
-[nas]
-path = /srv/nas
+[$SHARE_NAME]
+path = $SHARE_PATH
 browseable = yes
 read only = no
-guest ok = no
+guest ok = $GUEST_ACCESS
 valid users = $NAS_USER
 create mask = 0775
 directory mask = 0775
 EOF"
-else
-    echo "Samba share already exists"
 fi
 
 # ==============================================================
@@ -99,22 +116,14 @@ echo "Restarting Samba..."
 sudo systemctl restart smbd
 
 # ==============================================================
-# Done
+# Output
 # ==============================================================
-
-echo ""
-echo "✅ Samba NAS setup complete!"
-echo "📁 Share: /srv/nas"
-echo "👤 User: $NAS_USER"
-
-# ==============================================================
-# Access your NAS from Windows
-# ==============================================================
-
-echo ""
-echo "🌐 Access your NAS from Windows:"
 
 IP=$(hostname -I | awk '{print $1}')
 
-echo "➡ \\$IP\nas"
-
+echo ""
+echo "✅ Samba NAS setup complete!"
+echo "👤 User: $NAS_USER"
+echo "📁 Share name: $SHARE_NAME"
+echo "📂 Share path: $SHARE_PATH"
+echo "🌐 Access from Windows: \\\\$IP\\$SHARE_NAME"
