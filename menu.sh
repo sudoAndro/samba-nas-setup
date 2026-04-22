@@ -160,6 +160,27 @@ show_share_config() {
     pause_screen
 }
 
+show_connection_info() {
+    echo "=== Windows Connection Data ==="
+    echo
+
+    IP=$(hostname -I | awk '{print $1}')
+
+    echo "Server IP: $IP"
+    echo "Access from Windows:"
+    echo "\\\\$IP"
+    echo
+
+    echo "Available shares:"
+    grep "^\[" /etc/samba/smb.conf | sed 's/\[//;s/\]//'
+
+    echo
+    echo "Example:"
+    echo "\\\\$IP\\nas"
+    
+    pause_screen
+}
+
 while true; do
     show_banner
     echo "1) Install Samba NAS"
@@ -167,17 +188,18 @@ while true; do
     echo "3) Show Samba Status"
     echo "4) Check Samba Config"
     echo "5) Show Current Share Config"
-    echo "6) Exit"
-    echo
+    echo "6) Windows connection data"
+    echo "7) Exit"
     read -p "Choose an option: " choice
 
-    case "$choice" in
-        1) install_samba ;;
-        2) restart_samba ;;
-        3) show_status ;;
-        4) check_config ;;
-        5) show_share_config ;;
-        6) echo "Goodbye!"; exit 0 ;;
-        *) echo "Invalid option."; sleep 1 ;;
-    esac
+case "$choice" in
+    1) install_samba ;;
+    2) restart_samba ;;
+    3) show_status ;;
+    4) check_config ;;
+    5) show_share_config ;;
+    6) show_connection_info ;;
+    7) echo "Goodbye!"; exit 0 ;;
+    *) echo "Invalid option."; sleep 1 ;;
+esac
 done
