@@ -178,3 +178,36 @@ $NAS_USER
 Password:
 ******" 20 70
 }
+
+show_about() {
+    whiptail --title "About / Help" --msgbox "Samba NAS Setup Tool
+
+Created by:
+sudoAndro
+
+Purpose:
+This tool helps you create and manage a simple Samba NAS share
+on Debian or Raspberry Pi OS.
+
+What it can do:
+- install Samba
+- create a Linux user
+- create a Samba user
+- create a share
+- configure smb.conf
+- restart Samba
+- show connection data
+
+Connection examples:
+Windows:
+\\\\SERVER-IP\\SHARENAME
+
+Phone / File Manager:
+smb://SERVER-IP/SHARENAME
+
+Notes:
+- Share name is NOT the same as username
+- Username and password are required if guest access is disabled
+- Last setup data is stored in:
+/etc/samba-nas-setup.conf" 22 75
+}
