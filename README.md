@@ -2,16 +2,23 @@
 
 Simple automated Samba NAS installer for Debian and Raspberry Pi.
 
+```md
 ## Features
 
-- installs Samba
-- creates NAS directory
-- configures share automatically
+- interactive setup menu
+- Samba installation
+- Linux + Samba user creation
+- automatic share creation
+- firewall rule for Samba
+- config validation
+- service restart and status check
 
 ## Installation
 
+Run the setup tool with:
+
 ```bash
-bash install.sh
+bash menu.sh
 
 ## Share location
 
