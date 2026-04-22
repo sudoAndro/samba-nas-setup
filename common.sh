@@ -1,9 +1,7 @@
 #!/bin/bash
 
 show_banner() {
-    clear
-    echo -e "\033[1;32m"
-    cat <<'EOF'
+    whiptail --title "Samba NAS Setup Tool" --msgbox "
  ____                        _                _   _    _    ____  
               ,---------------------------,
               |  /---------------------\  |
@@ -25,11 +23,7 @@ show_banner() {
   /-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/ /
 /-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/ /
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-EOF
-    echo -e "\033[0m"
-}
 
-pause_screen() {
-    echo
-    read -p "Press Enter to continue..." dummy
+Welcome to the Samba NAS Setup Tool.
+" 24 78
 }

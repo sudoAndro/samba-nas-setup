@@ -104,34 +104,52 @@ restart_samba() {
 }
 
 show_status() {
-    STATUS=$(systemctl status smbd --no-pager 2>&1)
-    whiptail --scrolltext --msgbox "$STATUS" 25 90
+    TMP_FILE=$(mktemp)
+    systemctl status smbd --no-pager > "$TMP_FILE" 2>&1
+    whiptail --title "Samba Status" --textbox "$TMP_FILE" 25 90
+    rm -f "$TMP_FILE"
 }
 
+
 check_config() {
-    CONFIG_CHECK=$(testparm 2>&1)
-    whiptail --scrolltext --msgbox "$CONFIG_CHECK" 25 90
+    TMP_FILE=$(mktemp)
+    testparm > "$TMP_FILE" 2>&1
+    whiptail --title "Samba Config Check" --textbox "$TMP_FILE" 25 90
+    rm -f "$TMP_FILE"
 }
 
 show_share_config() {
-    SHARE_CONFIG=$(grep -A 10 "^\[.*\]" /etc/samba/smb.conf || true)
-    whiptail --scrolltext --msgbox "$SHARE_CONFIG" 25 90
+    TMP_FILE=$(mktemp)
+    grep -A 10 "^\[.*\]" /etc/samba/smb.conf > "$TMP_FILE" 2>&1 || true
+    whiptail --title "Current Samba Share Config" --textbox "$TMP_FILE" 25 90
+    rm -f "$TMP_FILE"
 }
 
 show_connection_info() {
     IP=$(hostname -I | awk '{print $1}')
     SHARES=$(grep "^\[" /etc/samba/smb.conf | sed 's/\[//;s/\]//')
 
-    whiptail --msgbox "Windows Connection Data
+    if [ -z "$SHARES" ]; then
+        SHARES="No shares found"
+        PATH_INFO="No share path available"
+    else
+        FIRST_SHARE=$(echo "$SHARES" | head -n 1)
+        PATH_INFO="\\\\$IP\\$FIRST_SHARE"
+    fi
 
-Server IP: $IP
+    whiptail --title "Windows Connection Data" --msgbox "Windows Connection Data
 
-Access from Windows:
-\\\\$IP
+
+Server IP:
+$IP
 
 Available shares:
 $SHARES
 
-Example:
-\\\\$IP\\nas" 18 70
+Windows path:
+$PATH_INFO
+
+Example login:
+Username = your Samba username
+Password = your Samba password" 20 70
 }
